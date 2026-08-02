@@ -1,0 +1,38 @@
+
+Single Page
+Documentation  »  Contributing and Hacking
+Contributing and Hacking
+The ethers.js library is something that I've written out of necessity, and has grown somewhat organically over time.
+
+Many things are the way they are for good (at the time, at least) reasons, but I always welcome criticism, and am completely willing to have my mind changed on things.
+
+Pull requests are always welcome, but please keep a few points in mind:
+
+Backwards-compatibility-breaking changes will not be accepted; they may be considered for the next major version
+Security is important; adding dependencies require fairly convincing arguments as to why
+The library aims to be lean, so keep an eye on the dist/ethers.min.js file size before and after your changes
+Keep the PR simple and readable; only modify files in the docs.wrm/ and packages/*/src.ts/ folders, as this allows the changes to be easily verified
+Add test cases for both expected and unexpected input
+Any new features need to be supported by me (future issues, documentation, testing, migration), so anything that is overly complicated or specific may not be accepted
+In general, please start an issue before beginning a pull request, so we can have a public discussion and figure out the best way to address the problem/feature. :)
+
+Building
+The build process for ethers is unfortunatly not super trivial, but I have attempted to make it as straightforward as possible.
+
+It is a mono-repo which attempts to be compatibile with a large number of environments, build tools and platforms, which is why there are a some weird things it must do.
+
+There are several custom scripts in the misc/admin folder to help manage the monorepo. Developers working on contributing to ethers should not generally need to worry about those, since they are wrapped up behind npm run SCRIPT operations.
+
+Installing
+# Clone the repository
+/home/ricmoo> git clone https://github.com/ethers-io/ethers.js.git
+
+/home/ricmoo> cd ethers.js
+
+# Install all dependencies:
+# - Hoists all sub-package dependencies in the package.json (preinstall)
+# - Installs all the (hoisted) dependencies and devDependencies (install)
+# - Build the rat-nests (in .package_node_modules) (postinstall)
+# - Create a dependency graph for the TypeScript (postinstall)
+# - Link the rat-nets into each project (postinstall)
+/home/ricmoo/ethers.js> npm install
