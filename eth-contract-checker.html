@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETH Contract Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .checker-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #contractAddress {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        #contractAddress:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .info-box.show {
+            display: block;
+        }
+
+        .info-box.success {
+            border-left-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .info-box.error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .info-box.loading {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .info-item {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #4b5563;
+            min-width: 150px;
+        }
+
+        .info-value {
+            word-break: break-all;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-verified {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-unverified {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .transactions-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .transactions-section.show {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #4b5563;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: #667eea;
+            color: white;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .tx-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .tx-hash:hover {
+            text-decoration: underline;
+        }
+
+        .address-short {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .status-success {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .status-failed {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-text {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .success-text {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination button:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pagination button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            th, td {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 ETH Contract Checker</h1>
+            <p>Verify Ethereum contracts and view transaction history on mainnet</p>
+        </div>
+
+        <div class="checker-section">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="contractAddress" 
+                    placeholder="Enter ETH contract address (0x...)"
+                    autocomplete="off"
+                >
+                <button class="btn" onclick="checkContract()">Check Contract</button>
+            </div>
+
+            <div id="infoBox" class="info-box"></div>
+
+            <div id="transactionsSection" class="transactions-section">
+                <div class="section-title">📊 Recent Transactions</div>
+                <div class="table-wrapper">
+                    <table id="transactionsTable">
+                        <thead>
+                            <tr>
+                                <th>Tx Hash</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Value (ETH)</th>
+                                <th>Gas Used</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="txBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by Etherscan API | Mainnet Only | Network: Ethereum</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const ETHERSCAN_CONFIG = {
+            apiKey: '1218707908',
+            baseUrl: 'https://api.etherscan.io/api',
+            network: 'mainnet',
+            txPerPage: 20
+        };
+
+        let currentPage = 1;
+        let currentAddress = '';
+
+        // Verify Contract Address
+        async function verifyContractAddress(contractAddress) {
+            const url = `${ETHERSCAN_CONFIG.baseUrl}?module=contract&action=getsourcecode&address=${contractAddress}&apikey=${ETHERSCAN_CONFIG.apiKey}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.status === '1' && data.result.length > 0) {
+                    const contract = data.result[0];
+                    return {
+                        success: true,
+                        data: contract
+                    };
+                } else {
+                    return {
+                        success: false,
+                        error: 'Contract not found on mainnet'
+                    };
+                }
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // Get Contract Transactions
+        async function getContractTransactions(contractAddress, page = 1) {
+            const offset = ETHERSCAN_CONFIG.txPerPage;
+            const url = `${ETHERSCAN_CONFIG.baseUrl}?module=account&action=txlist&address=${contractAddress}&startblock=0&endblock=99999999&page=${page}&offset=${offset}&sort=desc&apikey=${ETHERSCAN_CONFIG.apiKey}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.status === '1' && data.result.length > 0) {
+                    return {
+                        success: true,
+                        data: data.result.map(tx => ({
+                            hash: tx.hash,
+                            from: tx.from,
+                            to: tx.to,
+                            value: (tx.value / 1e18).toFixed(6),
+                            gas: tx.gas,
+                            gasPrice: (tx.gasPrice / 1e9).toFixed(2),
+                            timestamp: new Date(tx.timeStamp * 1000),
+                            status: tx.isError === '0' ? 'Success' : 'Failed',
+                            blockNumber: tx.blockNumber
+                        })),
+                        totalCount: data.result.length
+                    };
+                } else {
+                    return {
+                        success: true,
+                        data: [],
+                        totalCount: 0
+                    };
+                }
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // Display Info Box
+        function displayInfo(title, info, status = 'success') {
+            const infoBox = document.getElementById('infoBox');
+            infoBox.className = `info-box show ${status}`;
+            
+            let html = `<strong>${title}</strong><br>`;
+            
+            for (const [key, value] of Object.entries(info)) {
+                html += `
+                    <div class="info-item">
+                        <span class="info-label">${key}:</span>
+                        <span class="info-value">${value}</span>
+                    </div>
+                `;
+            }
+            
+            infoBox.innerHTML = html;
+        }
+
+        // Display Transactions
+        function displayTransactions(transactions) {
+            const tbody = document.getElementById('txBody');
+            
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">No transactions found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = transactions.map(tx => `
+                <tr>
+                    <td><a href="https://etherscan.io/tx/${tx.hash}" target="_blank" class="tx-hash">${tx.hash.substring(0, 12)}...</a></td>
+                    <td><span class="address-short">${tx.from.substring(0, 12)}...</span></td>
+                    <td><span class="address-short">${tx.to ? tx.to.substring(0, 12) + '...' : 'Contract Creation'}</span></td>
+                    <td>${tx.value}</td>
+                    <td>${tx.gas}</td>
+                    <td><span class="${tx.status === 'Success' ? 'status-success' : 'status-failed'}">${tx.status}</span></td>
+                    <td>${tx.timestamp.toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Check Contract
+        async function checkContract() {
+            const address = document.getElementById('contractAddress').value.trim();
+            
+            if (!address.match(/^0x[a-fA-F0-9]{40}$/)) {
+                displayInfo('❌ Invalid Address', {
+                    'Error': 'Please enter a valid Ethereum address (0x...)'
+                }, 'error');
+                return;
+            }
+            
+            currentAddress = address;
+            currentPage = 1;
+            
+            displayInfo('🔍 Checking Contract', {
+                'Status': 'Verifying...',
+                'Network': 'Ethereum Mainnet'
+            }, 'loading');
+            
+            const result = await verifyContractAddress(address);
+            
+            if (!result.success) {
+                displayInfo('❌ Error', {
+                    'Message': result.error
+                }, 'error');
+                document.getElementById('transactionsSection').classList.remove('show');
+                return;
+            }
+            
+            const contract = result.data;
+            const isVerified = contract.SourceCode ? 'Yes' : 'No';
+            const isProxy = contract.IsProxy === '1' ? 'Yes (Proxy)' : 'No';
+            
+            displayInfo('✅ Contract Found', {
+                'Name': contract.ContractName || 'Unknown',
+                'Address': address,
+                'Creator': contract.Creator || 'Unknown',
+                'Verified': `<span class="status-badge ${isVerified === 'Yes' ? 'status-verified' : 'status-unverified'}">${isVerified}</span>`,
+                'Proxy Contract': isProxy,
+                'Network': 'Ethereum Mainnet ✓'
+            }, 'success');
+            
+            // Fetch transactions
+            await loadTransactions(address, 1);
+        }
+
+        // Load Transactions
+        async function loadTransactions(address, page) {
+            currentPage = page;
+            
+            displayInfo('📊 Loading Transactions', {
+                'Status': 'Fetching from Etherscan...'
+            }, 'loading');
+            
+            const result = await getContractTransactions(address, page);
+            
+            if (!result.success) {
+                displayInfo('❌ Error Loading Transactions', {
+                    'Message': result.error
+                }, 'error');
+                return;
+            }
+            
+            document.getElementById('transactionsSection').classList.add('show');
+            displayTransactions(result.data);
+            
+            if (result.totalCount > 0) {
+                displayInfo('✅ Contract Verified', {
+                    'Transactions Found': result.totalCount,
+                    'Displaying': `${result.data.length} recent transactions`,
+                    'Page': page
+                }, 'success');
+            }
+        }
+
+        // Event Listener for Enter Key
+        document.getElementById('contractAddress').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkContract();
+        });
+    </script>
+</body>
+</html>
